@@ -11,7 +11,7 @@ import {
     KeyboardAvoidingView,
     Platform
 } from 'react-native';
-import Animated, { FadeInDown, FadeInScale } from 'react-native-reanimated';
+import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { COLORS, SPACING, TYPOGRAPHY, BORDER_RADIUS, SHADOWS, moderateScale } from '../constants/theme';
 import {
     saveCredentials,

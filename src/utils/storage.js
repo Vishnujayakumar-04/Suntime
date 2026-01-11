@@ -5,6 +5,7 @@ const KEYS = {
     USER_SETTINGS: 'user_settings',
     SESSION_LOGS: 'session_logs',
     MANUAL_UV: 'manual_uv',
+    PROFILE_IMAGE: 'profile_image',
 };
 
 /**
@@ -136,6 +137,31 @@ export const resetAllData = async () => {
         console.log('✅ All application data reset');
     } catch (error) {
         console.error('Error resetting data:', error);
+    }
+};
+
+/**
+ * PROFILE IMAGE
+ */
+export const getProfileImage = async () => {
+    try {
+        const imageUri = await AsyncStorage.getItem(KEYS.PROFILE_IMAGE);
+        return imageUri;
+    } catch (error) {
+        console.error('Error getting profile image:', error);
+        return null;
+    }
+};
+
+export const setProfileImage = async (imageUri) => {
+    try {
+        if (imageUri) {
+            await AsyncStorage.setItem(KEYS.PROFILE_IMAGE, imageUri);
+        } else {
+            await AsyncStorage.removeItem(KEYS.PROFILE_IMAGE);
+        }
+    } catch (error) {
+        console.error('Error setting profile image:', error);
     }
 };
 

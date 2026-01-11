@@ -9,7 +9,7 @@ import {
     Alert,
     Platform
 } from 'react-native';
-import Animated, { FadeInDown, FadeInScale } from 'react-native-reanimated';
+import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { COLORS, SPACING, TYPOGRAPHY, BORDER_RADIUS, SHADOWS, moderateScale } from '../../constants/theme';
 import { AlertTriangle, Info, ShieldAlert, Heart, Activity } from 'lucide-react-native';
 import { completeSetup, saveDisclaimerAcceptance } from '../../utils/storage';
@@ -73,7 +73,7 @@ export default function SetupStep4Disclaimer({ navigation }) {
 
                 {/* Disclaimer Content */}
                 <Animated.View
-                    entering={FadeInScale}
+                    entering={ZoomIn}
                     style={styles.disclaimerCard}
                 >
                     <Text style={styles.disclaimerTitle}>Please Read Carefully</Text>

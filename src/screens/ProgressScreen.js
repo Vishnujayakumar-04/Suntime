@@ -7,7 +7,7 @@ import {
     ScrollView,
     Platform
 } from 'react-native';
-import Animated, { FadeInDown, FadeInScale, FadeInRight } from 'react-native-reanimated';
+import Animated, { FadeInDown, ZoomIn, FadeInRight } from 'react-native-reanimated';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, TYPOGRAPHY, BORDER_RADIUS, SHADOWS, moderateScale } from '../constants/theme';
 import { getSessionLogs } from '../utils/storage';
@@ -102,7 +102,7 @@ export default function ProgressScreen() {
 
                 {/* Today's Progress */}
                 <Animated.View
-                    entering={FadeInScale}
+                    entering={ZoomIn}
                     style={styles.card}
                 >
                     <Text style={styles.cardTitle}>Today's Sun Exposure</Text>
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         padding: SPACING.lg,
-        paddingBottom: SPACING.xxl,
+        paddingBottom: moderateScale(100),
     },
     header: {
         marginBottom: SPACING.xl,

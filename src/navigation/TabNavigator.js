@@ -1,36 +1,112 @@
+/* eslint-disable react/no-unstable-nested-components */
 import React from 'react';
-import { Text } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform, Dimensions, LayoutAnimation } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { COLORS, moderateScale } from '../constants/theme';
-import { Sun, History, LineChart, BookOpen, Settings } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Sun, Activity, BarChart2, User } from 'lucide-react-native';
+import { COLORS, SHADOWS, moderateScale } from '../constants/theme';
+import Animated, { useAnimatedStyle, withSpring, useSharedValue, withTiming } from 'react-native-reanimated';
 
 // Screens
 import HomeScreen from '../screens/HomeScreen';
-import HistoryScreen from '../screens/HistoryScreen';
 import ProgressScreen from '../screens/ProgressScreen';
 import LearnScreen from '../screens/LearnScreen';
-import SettingsScreen from '../screens/SettingsScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+
+
 
 const Tab = createBottomTabNavigator();
+
+const TabItem = ({ isFocused, options, onPress, onLongPress, Icon, label }) => {
+    return (
+        <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityState={isFocused ? { selected: true } : {}}
+            accessibilityLabel={options.tabBarAccessibilityLabel}
+            onPress={onPress}
+            onLongPress={onLongPress}
+            style={[styles.tabItem, isFocused ? styles.tabItemActive : null]}
+        >
+            <View style={[styles.contentContainer, isFocused && styles.contentActive]}>
+                <Icon
+                    size={22}
+                    color={isFocused ? COLORS.primary : '#999999'}
+                    strokeWidth={isFocused ? 2.5 : 2}
+                />
+                {isFocused && (
+                    <Text
+                        numberOfLines={1}
+                        style={[styles.tabLabel, { color: COLORS.primary }]}
+                    >
+                        {label}
+                    </Text>
+                )}
+            </View>
+        </TouchableOpacity>
+    );
+};
+
+const CustomTabBar = ({ state, descriptors, navigation }) => {
+    const insets = useSafeAreaInsets();
+
+    return (
+        <View style={[styles.tabBarContainer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+            <View style={styles.tabBar}>
+                {state.routes.map((route, index) => {
+                    const { options } = descriptors[route.key];
+                    const label = options.tabBarLabel !== undefined
+                        ? options.tabBarLabel
+                        : options.title !== undefined
+                            ? options.title
+                            : route.name;
+
+                    const isFocused = state.index === index;
+
+                    const onPress = () => {
+                        const event = navigation.emit({
+                            type: 'tabPress',
+                            target: route.key,
+                            canPreventDefault: true,
+                        });
+
+                        if (!isFocused && !event.defaultPrevented) {
+                            // Animate layout changes
+                            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                            navigation.navigate(route.name);
+                        }
+                    };
+
+                    const onLongPress = () => {
+                        navigation.emit({
+                            type: 'tabLongPress',
+                            target: route.key,
+                        });
+                    };
+
+                    const Icon = options.tabBarIcon;
+
+                    return (
+                        <TabItem
+                            key={index}
+                            isFocused={isFocused}
+                            options={options}
+                            onPress={onPress}
+                            onLongPress={onLongPress}
+                            Icon={Icon}
+                            label={label}
+                        />
+                    );
+                })}
+            </View>
+        </View>
+    );
+};
 
 export default function TabNavigator() {
     return (
         <Tab.Navigator
+            tabBar={props => <CustomTabBar {...props} />}
             screenOptions={{
-                tabBarActiveTintColor: COLORS.primary,
-                tabBarInactiveTintColor: COLORS.textSecondary,
-                tabBarStyle: {
-                    backgroundColor: COLORS.cardBackground,
-                    borderTopColor: COLORS.border,
-                    borderTopWidth: 1,
-                    paddingTop: moderateScale(8),
-                    paddingBottom: moderateScale(8),
-                    height: moderateScale(65),
-                },
-                tabBarLabelStyle: {
-                    fontSize: moderateScale(11),
-                    fontWeight: '600',
-                },
                 headerShown: false,
             }}
         >
@@ -38,37 +114,103 @@ export default function TabNavigator() {
                 name="Home"
                 component={HomeScreen}
                 options={{
-                    tabBarIcon: ({ color, size }) => <Sun color={color} size={moderateScale(24)} />,
+                    tabBarLabel: 'Home',
+                    tabBarIcon: ({ color, size, strokeWidth }) => <Sun color={color} size={size} strokeWidth={strokeWidth} />,
                 }}
             />
             <Tab.Screen
-                name="History"
-                component={HistoryScreen}
+                name="Activities"
+                component={LearnScreen} // Renamed Learn to Activities/Plans
                 options={{
-                    tabBarIcon: ({ color, size }) => <History color={color} size={moderateScale(24)} />,
+                    tabBarLabel: 'Plans',
+                    tabBarIcon: ({ color, size, strokeWidth }) => <Activity color={color} size={size} strokeWidth={strokeWidth} />,
                 }}
             />
             <Tab.Screen
                 name="Progress"
                 component={ProgressScreen}
                 options={{
-                    tabBarIcon: ({ color, size }) => <LineChart color={color} size={moderateScale(24)} />,
+                    tabBarLabel: 'Stats',
+                    tabBarIcon: ({ color, size, strokeWidth }) => <BarChart2 color={color} size={size} strokeWidth={strokeWidth} />,
                 }}
             />
+
             <Tab.Screen
-                name="Learn"
-                component={LearnScreen}
+                name="Profile"
+                component={ProfileScreen}
                 options={{
-                    tabBarIcon: ({ color, size }) => <BookOpen color={color} size={moderateScale(24)} />,
-                }}
-            />
-            <Tab.Screen
-                name="Settings"
-                component={SettingsScreen}
-                options={{
-                    tabBarIcon: ({ color, size }) => <Settings color={color} size={moderateScale(24)} />,
+                    tabBarLabel: 'Profile',
+                    tabBarIcon: ({ color, size, strokeWidth }) => <User color={color} size={size} strokeWidth={strokeWidth} />,
                 }}
             />
         </Tab.Navigator>
     );
 }
+
+const styles = StyleSheet.create({
+    placeholderContainer: {
+        flex: 1,
+        backgroundColor: COLORS.background,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    placeholderText: {
+        ...COLORS.heading,
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginBottom: 8,
+    },
+    placeholderSubText: {
+        color: COLORS.textSecondary,
+    },
+    tabBarContainer: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        alignItems: 'center',
+        backgroundColor: 'transparent', // Transparent container for floating effect
+    },
+    tabBar: {
+        flexDirection: 'row',
+        backgroundColor: '#FFFFFF',
+        width: '94%',
+        borderRadius: 40, // Pill shape
+        height: 65,
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 8,
+        ...SHADOWS.medium,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+        elevation: 8,
+    },
+    tabItem: {
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+        flex: 1,
+    },
+    tabItemActive: {
+        flex: 1.8, // Grow active item
+    },
+    contentContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        borderRadius: 30,
+    },
+    contentActive: {
+        backgroundColor: '#F5F5F7', // Soft highlight
+        gap: 8,
+    },
+    tabLabel: {
+        fontSize: 12,
+        fontWeight: '600',
+        marginLeft: 4,
+    },
+});

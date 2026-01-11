@@ -8,7 +8,7 @@ import {
     Dimensions,
     Platform
 } from 'react-native';
-import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInRight, ZoomIn } from 'react-native-reanimated';
 import { useFocusEffect } from '@react-navigation/native';
 import { BarChart } from 'react-native-chart-kit';
 import { COLORS, SPACING, TYPOGRAPHY, BORDER_RADIUS, SHADOWS, moderateScale } from '../constants/theme';
@@ -103,7 +103,7 @@ export default function HistoryScreen() {
                 {/* Bar Chart - Last 7 Days */}
                 {chartData && chartData.durationData.some((v) => v > 0) ? (
                     <Animated.View
-                        entering={FadeInScale}
+                        entering={ZoomIn}
                         style={styles.chartContainer}
                     >
                         <Text style={styles.chartTitle}>Exposure Time (mins) - Last 7 Days</Text>

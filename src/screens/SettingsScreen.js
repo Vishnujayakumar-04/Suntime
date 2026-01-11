@@ -19,7 +19,7 @@ import {
     resetAllData,
     injectDemoData,
 } from '../utils/storage';
-import { getSkinTypeDescription } from '../utils/sunLogic';
+
 import {
     isAppLockEnabled,
     setAppLockEnabled,
@@ -30,7 +30,6 @@ import {
 } from '../utils/auth';
 
 export default function SettingsScreen({ navigation }) {
-    const [skinType, setSkinTypeState] = useState(null);
     const [manualUV, setManualUVState] = useState('');
     const [appLockEnabled, setAppLockEnabledState] = useState(false);
     const [isRegistered, setIsRegistered] = useState(false);
@@ -42,9 +41,6 @@ export default function SettingsScreen({ navigation }) {
 
     const loadSettings = async () => {
         try {
-            const settings = await getUserSettings();
-            setSkinTypeState(settings.skinType);
-
             const uv = await getManualUV();
             if (uv !== null) {
                 setManualUVState(uv.toString());
@@ -300,30 +296,7 @@ export default function SettingsScreen({ navigation }) {
                     <Text style={styles.subtitle}>Manage your app preferences</Text>
                 </Animated.View>
 
-                {/* Profile Section */}
-                <Animated.View
-                    entering={FadeInDown}
-                    style={styles.section}
-                >
-                    <Text style={styles.sectionTitle}>Profile</Text>
-                    {skinType && (
-                        <View style={styles.infoCard}>
-                            <Text style={styles.infoLabel}>Skin Type</Text>
-                            <Text style={styles.infoValue}>
-                                {getSkinTypeDescription(skinType)}
-                            </Text>
-                        </View>
-                    )}
-                    <TouchableOpacity
-                        style={styles.actionButton}
-                        onPress={() => navigation.navigate('ChangeSkinType')}
-                    >
-                        <Text style={styles.actionButtonText}>Change Skin Type</Text>
-                        <Text style={styles.actionButtonDescription}>
-                            Update your Fitzpatrick skin type
-                        </Text>
-                    </TouchableOpacity>
-                </Animated.View>
+
 
                 {/* App Lock Section */}
                 <Animated.View
@@ -384,20 +357,7 @@ export default function SettingsScreen({ navigation }) {
                         Account Settings
                     </Text>
 
-                    {/* Logout (only if registered) */}
-                    {isRegistered && (
-                        <TouchableOpacity
-                            style={[styles.actionButton, styles.dangerButton]}
-                            onPress={handleLogout}
-                        >
-                            <Text style={[styles.actionButtonText, { color: COLORS.danger }]}>
-                                🚪 Logout
-                            </Text>
-                            <Text style={styles.actionButtonDescription}>
-                                End session (keeps all data)
-                            </Text>
-                        </TouchableOpacity>
-                    )}
+
 
                     <TouchableOpacity
                         style={[styles.actionButton, styles.dangerButton]}
@@ -444,7 +404,7 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         padding: SPACING.lg,
-        paddingBottom: SPACING.xxl,
+        paddingBottom: moderateScale(100), // Ensure content clears tab bar
     },
     title: {
         ...TYPOGRAPHY.title,
@@ -531,7 +491,7 @@ const styles = StyleSheet.create({
     actionButton: {
         backgroundColor: COLORS.cardBackground,
         borderRadius: BORDER_RADIUS.lg,
-        padding: SPACING.lg,
+        padding: SPACING.md, // Reduced from lg to md for cleaner size
         marginBottom: SPACING.md,
         ...SHADOWS.small,
     },

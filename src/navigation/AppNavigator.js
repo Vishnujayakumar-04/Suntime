@@ -16,6 +16,8 @@ import SetupStep4Disclaimer from '../screens/setup/SetupStep4Disclaimer';
 // Main App
 import TabNavigator from './TabNavigator';
 import OnboardingScreen from '../screens/OnboardingScreen';
+import HistoryScreen from '../screens/HistoryScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -61,7 +63,12 @@ export default function AppNavigator() {
         <NavigationContainer>
             <Stack.Navigator
                 initialRouteName={initialRoute}
-                screenOptions={{ headerShown: false }}
+                screenOptions={{
+                    headerShown: false,
+                    headerStyle: { backgroundColor: '#FFFFFF' },
+                    headerTintColor: '#000000',
+                    headerTitleStyle: { fontWeight: 'bold' },
+                }}
             >
                 {/* UNIFIED AUTH SCREEN - Login/Register tabs */}
                 <Stack.Screen
@@ -94,6 +101,26 @@ export default function AppNavigator() {
                 <Stack.Screen
                     name="MainTabs"
                     component={TabNavigator}
+                />
+
+                <Stack.Screen
+                    name="History"
+                    component={HistoryScreen}
+                    options={{
+                        headerShown: true,
+                        headerTitle: 'History',
+                        headerBackTitleVisible: false,
+                    }}
+                />
+
+                <Stack.Screen
+                    name="Settings"
+                    component={SettingsScreen}
+                    options={{
+                        headerShown: true,
+                        headerTitle: 'Settings',
+                        headerBackTitleVisible: false,
+                    }}
                 />
 
                 {/* Modal for changing skin type from Settings */}

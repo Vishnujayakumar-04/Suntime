@@ -9,6 +9,9 @@ import {
     Alert,
     ScrollView,
     InteractionManager,
+    BackHandler,
+    ToastAndroid,
+    Platform
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Location from 'expo-location';
@@ -20,11 +23,29 @@ import Animated, {
     useSharedValue,
     withRepeat,
     withSequence,
-    withSpring
+    withSpring,
+    ZoomIn
 } from 'react-native-reanimated';
 import { COLORS, SPACING, TYPOGRAPHY, BORDER_RADIUS, SHADOWS, moderateScale } from '../constants/theme';
 import { getUserSettings, getManualUV, addSessionLog, getDefaultPreferences } from '../utils/storage';
 import { calculateSafeTime, getUVCategory } from '../utils/sunLogic';
+
+const UV_SCALE_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+const getScaleColor = (uv) => {
+    if (uv <= 2) return '#2E7D32'; // Strong Green
+    if (uv <= 5) return '#F9A825'; // Vibrant Gold
+    if (uv <= 7) return '#EF6C00'; // Deep Orange
+    if (uv <= 10) return '#C62828'; // Strong Red
+    return '#6A1B9A'; // Deep Violet
+};
+
+const RISK_LEVELS = [
+    { range: '0-2', level: 'Low', color: '#2E7D32' },
+    { range: '3-5', level: 'Moderate', color: '#F9A825' },
+    { range: '6-7', level: 'High', color: '#EF6C00' },
+    { range: '8-10', level: 'Very High', color: '#C62828' },
+    { range: '11+', level: 'Extreme', color: '#6A1B9A' },
+];
 
 export default function HomeScreen() {
     // UV state
@@ -38,6 +59,7 @@ export default function HomeScreen() {
     // Timer state - TIMESTAMP-BASED for robustness
     const [timeLeft, setTimeLeft] = useState(1800); // seconds
     const [isActive, setIsActive] = useState(false);
+    const [hasStarted, setHasStarted] = useState(false); // New state to track if timer was ever started
     const [endTimestamp, setEndTimestamp] = useState(null); // CRITICAL: stores when timer should end
     const intervalRef = useRef(null);
 
@@ -88,12 +110,40 @@ export default function HomeScreen() {
         }
     };
 
+    // Double tap to exit logic
+    useFocusEffect(
+        useCallback(() => {
+            let lastBackPress = 0;
+
+            const onBackPress = () => {
+                const now = Date.now();
+                if (now - lastBackPress < 2000) {
+                    BackHandler.exitApp();
+                    return true;
+                }
+
+                lastBackPress = now;
+                if (Platform.OS === 'android') {
+                    ToastAndroid.show('Press back again to exit', ToastAndroid.SHORT);
+                } else {
+                    // For iOS or other platforms where ToastAndroid isn't available
+                    // We typically typically rely on gesture swiping, but this is good fallback
+                }
+                return true;
+            };
+
+            const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+            return () => backHandler.remove();
+        }, [])
+    );
+
     // Initialize data
     useEffect(() => {
         initializeData();
     }, []);
 
-    // Refresh data when screen comes into focus (e.g., coming back from settings)
+    // Refresh data when screen comes into focus
     useFocusEffect(
         useCallback(() => {
             initializeData();
@@ -105,12 +155,13 @@ export default function HomeScreen() {
         if (uvIndex !== null && skinType !== null) {
             const newSafeTime = calculateSafeTime(uvIndex, skinType, isCloudy, hasSunscreen);
             setSafeMinutes(newSafeTime);
-            // Only reset timeLeft if timer is not active
-            if (!isActive) {
+
+            // Only reset timeLeft if the timer hasn't started yet
+            if (!hasStarted && !isActive) {
                 setTimeLeft(newSafeTime * 60);
             }
         }
-    }, [uvIndex, skinType, isCloudy, hasSunscreen, isActive]);
+    }, [uvIndex, skinType, isCloudy, hasSunscreen, hasStarted]);
 
     // Timer countdown - TIMESTAMP-BASED APPROACH
     useEffect(() => {
@@ -242,6 +293,7 @@ export default function HomeScreen() {
         const endTime = Date.now() + (timeLeft * 1000);
         setEndTimestamp(endTime);
         setIsActive(true);
+        setHasStarted(true);
     };
 
     const stopTimer = () => {
@@ -252,6 +304,7 @@ export default function HomeScreen() {
     const resetTimer = () => {
         setIsActive(false);
         setEndTimestamp(null);
+        setHasStarted(false); // Reset this so it can be auto-updated again
         setTimeLeft(safeMinutes * 60);
     };
 
@@ -281,6 +334,37 @@ export default function HomeScreen() {
                     <Text style={styles.logo}>Suntime</Text>
                 </View>
 
+                {/* FEATURE 1: UV INDEX COLOR SCALE */}
+                <View style={styles.scaleContainer}>
+                    <Text style={styles.scaleLabel}>UV Spectrum</Text>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.uvScaleScroll}
+                        style={{ flexGrow: 0 }}
+                    >
+                        <View style={styles.uvScale}>
+                            {UV_SCALE_NUMBERS.map((num) => {
+                                const isSelected = uvIndex !== null && (num === 11 ? uvIndex >= 11 : Math.round(uvIndex) === num);
+                                return (
+                                    <View
+                                        key={num}
+                                        style={[
+                                            styles.scaleItem,
+                                            { backgroundColor: getScaleColor(num) },
+                                            isSelected && styles.scaleItemActive
+                                        ]}
+                                    >
+                                        <Text style={[styles.scaleText, isSelected && styles.scaleTextActive]}>
+                                            {num}{num === 11 ? '+' : ''}
+                                        </Text>
+                                    </View>
+                                );
+                            })}
+                        </View>
+                    </ScrollView>
+                </View>
+
                 {/* UV Widget */}
                 <Animated.View
                     entering={FadeInDown}
@@ -299,7 +383,7 @@ export default function HomeScreen() {
 
                 {/* Circular Countdown Timer */}
                 <Animated.View
-                    entering={FadeInScale}
+                    entering={ZoomIn}
                     style={styles.timerContainer}
                 >
                     <View style={styles.circularTimer}>
@@ -382,12 +466,28 @@ export default function HomeScreen() {
                     </Text>
                 </View>
 
+                {/* FEATURE 2: RISK LEVEL LEGEND */}
+                <View style={styles.riskLegendCard}>
+                    <Text style={styles.riskLegendTitle}>Risk Level Guide</Text>
+                    <View style={styles.riskList}>
+                        {RISK_LEVELS.map((item, index) => (
+                            <View key={index} style={styles.riskRow}>
+                                <View style={styles.riskRangeContainer}>
+                                    <View style={[styles.riskDot, { backgroundColor: item.color }]} />
+                                    <Text style={styles.riskRange}>{item.range}</Text>
+                                </View>
+                                <Text style={[styles.riskLevel, { color: item.color }]}>{item.level}</Text>
+                            </View>
+                        ))}
+                    </View>
+                </View>
+
                 {/* Disclaimer */}
                 <View style={styles.disclaimer}>
                     <Text style={styles.disclaimerText}>Estimates only. Not medical advice.</Text>
                 </View>
             </ScrollView>
-        </SafeAreaView>
+        </SafeAreaView >
     );
 }
 
@@ -398,6 +498,7 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         padding: SPACING.lg,
+        paddingBottom: moderateScale(100),
     },
     loadingText: {
         ...TYPOGRAPHY.body,
@@ -453,8 +554,8 @@ const styles = StyleSheet.create({
         ...SHADOWS.medium,
     },
     circularTimer: {
-        width: moderateScale(220),
-        height: moderateScale(220),
+        width: moderateScale(200),
+        height: moderateScale(200),
         justifyContent: 'center',
         alignItems: 'center',
         position: 'relative',
@@ -462,16 +563,16 @@ const styles = StyleSheet.create({
     },
     progressRing: {
         position: 'absolute',
-        width: moderateScale(220),
-        height: moderateScale(220),
-        borderRadius: moderateScale(110),
-        borderWidth: moderateScale(12),
+        width: moderateScale(200),
+        height: moderateScale(200),
+        borderRadius: moderateScale(100),
+        borderWidth: moderateScale(10),
     },
     timerContent: {
         alignItems: 'center',
     },
     timerTime: {
-        fontSize: moderateScale(52),
+        fontSize: moderateScale(48),
         fontWeight: 'bold',
         color: COLORS.text,
         letterSpacing: -1,
@@ -486,11 +587,13 @@ const styles = StyleSheet.create({
     controlsContainer: {
         marginTop: SPACING.md,
         width: '100%',
+        maxWidth: 400, // Constrain max width for tablets
+        alignSelf: 'center',
     },
     startButton: {
         backgroundColor: COLORS.primary,
         borderRadius: BORDER_RADIUS.lg,
-        padding: SPACING.md + 2,
+        padding: SPACING.md, // Reduced padding
         alignItems: 'center',
         ...SHADOWS.button,
     },
@@ -502,7 +605,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: COLORS.primary,
         borderRadius: BORDER_RADIUS.lg,
-        padding: SPACING.md + 2,
+        padding: SPACING.md, // Reduced padding
         alignItems: 'center',
         ...SHADOWS.button,
     },
@@ -603,5 +706,90 @@ const styles = StyleSheet.create({
         ...TYPOGRAPHY.caption,
         fontStyle: 'italic',
         color: COLORS.textSecondary,
+    },
+    // New Styles
+    scaleContainer: {
+        marginBottom: SPACING.lg,
+        alignItems: 'center',
+    },
+    scaleLabel: {
+        ...TYPOGRAPHY.caption,
+        color: COLORS.textSecondary,
+        marginBottom: SPACING.xs,
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+    },
+    uvScale: {
+        flexDirection: 'row',
+        gap: moderateScale(8),
+        paddingHorizontal: SPACING.xs,
+        paddingVertical: SPACING.xs, // Add padding for shadow clipping
+    },
+    uvScaleScroll: {
+        paddingRight: SPACING.lg, // Extra padding at end
+    },
+    scaleItem: {
+        width: moderateScale(28), // Slightly larger
+        height: moderateScale(28),
+        borderRadius: moderateScale(14),
+        justifyContent: 'center',
+        alignItems: 'center',
+        // No opacity, solid colors
+    },
+    scaleItemActive: {
+        transform: [{ scale: 1.2 }], // Scale 1.2x
+        borderWidth: 3, // Thick border
+        borderColor: '#333333', // Dark Grey/Black border
+        ...SHADOWS.medium,
+        zIndex: 10,
+    },
+    scaleText: {
+        fontSize: moderateScale(12),
+        color: '#FFFFFF',
+        fontWeight: 'bold',
+    },
+    scaleTextActive: {
+        fontSize: moderateScale(13),
+    },
+    riskLegendCard: {
+        backgroundColor: COLORS.cardBackground,
+        borderRadius: BORDER_RADIUS.lg,
+        padding: SPACING.lg,
+        marginBottom: SPACING.md,
+        ...SHADOWS.small,
+    },
+    riskLegendTitle: {
+        ...TYPOGRAPHY.subheading,
+        fontWeight: 'bold',
+        marginBottom: SPACING.md,
+        color: COLORS.text,
+    },
+    riskList: {
+        gap: SPACING.sm,
+    },
+    riskRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    riskRangeContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: SPACING.md,
+    },
+    riskDot: {
+        width: moderateScale(12),
+        height: moderateScale(12),
+        borderRadius: moderateScale(6),
+    },
+    riskRange: {
+        ...TYPOGRAPHY.body,
+        color: COLORS.text,
+        fontWeight: '600',
+        width: moderateScale(50),
+    },
+    riskLevel: {
+        ...TYPOGRAPHY.body,
+        fontWeight: 'bold',
     },
 });

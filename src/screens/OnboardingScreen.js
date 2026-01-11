@@ -9,7 +9,7 @@ import {
     Alert,
     Platform
 } from 'react-native';
-import Animated, { FadeInDown, FadeInRight, FadeInScale } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInRight, ZoomIn } from 'react-native-reanimated';
 import { COLORS, SPACING, TYPOGRAPHY, BORDER_RADIUS, SHADOWS, moderateScale } from '../constants/theme';
 import { Sun } from 'lucide-react-native';
 import { setOnboarded } from '../utils/storage';
