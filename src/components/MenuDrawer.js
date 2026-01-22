@@ -25,9 +25,6 @@ import {
     LogOut,
     Moon,
     Settings,
-    Activity,
-    Shield,
-    FileText,
     Info,
     Lock,
     HelpCircle
@@ -168,20 +165,6 @@ export default function MenuDrawer({
                         <ScrollView contentContainerStyle={dynamicStyles.menuContent}>
                             <Text style={dynamicStyles.sectionTitle}>Menu</Text>
 
-                            <MenuItem
-                                icon={Activity}
-                                label="My Progress"
-                                colors={colors}
-                                menuStyles={dynamicStyles}
-                                onPress={() => { onClose(); navigation.navigate('History'); }}
-                            />
-                            <MenuItem
-                                icon={FileText}
-                                label="Scientific Evidence"
-                                colors={colors}
-                                menuStyles={dynamicStyles}
-                                onPress={() => { onClose(); navigation.navigate('Activities'); }} // Assuming this maps to LearnScreen
-                            />
                             <MenuItem
                                 icon={HelpCircle}
                                 label="FAQ"

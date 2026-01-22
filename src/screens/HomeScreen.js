@@ -661,7 +661,7 @@ export default function HomeScreen({ navigation }) {
 
                 {/* FEATURE 1: UV INDEX COLOR SCALE */}
                 <View style={styles.scaleContainer}>
-                    <Text style={styles.scaleLabel}>UV Spectrum</Text>
+                    <Text style={[styles.scaleLabel, { textAlign: 'center', width: '100%' }]}>UV SPECTRUM</Text>
                     <View style={styles.uvScale}>
                         {UV_SCALE_NUMBERS.map((num) => {
                             const isSelected = uvIndex !== null && (num === 11 ? uvIndex >= 11 : Math.round(uvIndex) === num);
@@ -705,132 +705,128 @@ export default function HomeScreen({ navigation }) {
 
                     <Text style={styles.timerValueMain}>{formattedTime}</Text>
 
-                    {/* Controls embedded in card or below? Reference says "Big white rounded card". 
-                        Usually controls are inside or just below. I'll put controls below effectively.
-                    */}
+                    {/* Timer Controls (Now Inside Card) */}
+                    <View style={styles.controlsContainer}>
+                        {!isActive ? (
+                            <TouchableOpacity onPress={startTimer} style={styles.shadowButtonWrapper}>
+                                <LinearGradient
+                                    colors={GRADIENTS.primary}
+                                    style={[styles.startButton, isDailyLimitReached && { opacity: 0.5 }]}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 0 }}
+                                >
+                                    <Text style={styles.buttonText}>
+                                        {isDailyLimitReached ? 'Daily Limit Reached' : hasStarted ? 'Resume' : 'Start Timer'}
+                                    </Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                        ) : (
+                            <View style={styles.activeControls}>
+                                <StandardButton
+                                    title="Pause"
+                                    onPress={stopTimer}
+                                    style={{ flex: 1 }}
+                                />
+                                <StandardButton
+                                    title="Reset"
+                                    onPress={resetTimer}
+                                    variant="secondary"
+                                    style={{ flex: 1, backgroundColor: colors.textSecondary }}
+                                />
+                            </View>
+                        )}
+                    </View>
                 </Animated.View>
-
-                {/* Timer Controls (Below Card) */}
-                <View style={styles.controlsContainer}>
-                    {!isActive ? (
-                        <TouchableOpacity onPress={startTimer} style={styles.shadowButtonWrapper}>
-                            <LinearGradient
-                                colors={GRADIENTS.primary}
-                                style={[styles.startButton, isDailyLimitReached && { opacity: 0.5 }]}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                            >
-                                <Text style={styles.buttonText}>
-                                    {isDailyLimitReached ? 'Daily Limit Reached' : hasStarted ? 'Resume' : 'Start Timer'}
-                                </Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
-                    ) : (
-                        <View style={styles.activeControls}>
-                            <StandardButton
-                                title="Pause"
-                                onPress={stopTimer}
-                                style={{ flex: 1 }}
-                            />
-                            <StandardButton
-                                title="Reset"
-                                onPress={resetTimer}
-                                variant="secondary"
-                                style={{ flex: 1, backgroundColor: colors.textSecondary }}
-                            />
-                        </View>
-                    )}
-                </View>
-            {/* Environment Toggles */}
-            <View style={styles.togglesContainer}>
-                <TouchableOpacity
-                    style={[
-                        styles.toggle,
-                        isCloudy && styles.toggleActive,
-                        isActive && { opacity: 0.5 }
-                    ]}
-                    onPress={() => setIsCloudy(!isCloudy)}
-                    disabled={isActive}
-                >
-                    <Text style={[styles.toggleText, isCloudy && styles.toggleTextActive]}>
-                        Cloudy
-                    </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={[
-                        styles.toggle,
-                        hasSunscreen && styles.toggleActive,
-                        isActive && { opacity: 0.5 }
-                    ]}
-                    onPress={() => setHasSunscreen(!hasSunscreen)}
-                    disabled={isActive}
-                >
-                    <Text style={[styles.toggleText, hasSunscreen && styles.toggleTextActive]}>
-                        Sunscreen
-                    </Text>
-                </TouchableOpacity>
-            </View>
-
-            {/* High UV Warning */}
-            {uvIndex >= 10 && (
-                <View style={styles.warningBanner}>
-                    <View style={styles.warningTextContainer}>
-                        <Text style={styles.warningTitle}>Extreme UV Alert!</Text>
-                        <Text style={styles.warningText}>
-                            UV Index is dangerously high. Limit sun exposure.
+                {/* Environment Toggles */}
+                <View style={styles.togglesContainer}>
+                    <TouchableOpacity
+                        style={[
+                            styles.toggle,
+                            isCloudy && styles.toggleActive,
+                            isActive && { opacity: 0.5 }
+                        ]}
+                        onPress={() => setIsCloudy(!isCloudy)}
+                        disabled={isActive}
+                    >
+                        <Text style={[styles.toggleText, isCloudy && styles.toggleTextActive]}>
+                            Cloudy
                         </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[
+                            styles.toggle,
+                            hasSunscreen && styles.toggleActive,
+                            isActive && { opacity: 0.5 }
+                        ]}
+                        onPress={() => setHasSunscreen(!hasSunscreen)}
+                        disabled={isActive}
+                    >
+                        <Text style={[styles.toggleText, hasSunscreen && styles.toggleTextActive]}>
+                            Sunscreen
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+
+                {/* High UV Warning */}
+                {uvIndex >= 10 && (
+                    <View style={styles.warningBanner}>
+                        <View style={styles.warningTextContainer}>
+                            <Text style={styles.warningTitle}>Extreme UV Alert!</Text>
+                            <Text style={styles.warningText}>
+                                UV Index is dangerously high. Limit sun exposure.
+                            </Text>
+                        </View>
+                    </View>
+                )}
+
+                {/* Safe Time Display */}
+                <View style={styles.infoCard}>
+                    <Text style={styles.infoText}>
+                        Your safe sun exposure time: <Text style={styles.infoHighlight}>{safeMinutes} minutes</Text>
+                    </Text>
+                </View>
+
+                {/* FEATURE 2: RISK LEVEL LEGEND */}
+                <View style={styles.riskLegendCard}>
+                    <View style={{ marginBottom: SPACING.md }}>
+                        <Text style={[styles.riskLegendTitle, { marginBottom: 0 }]}>Risk Level Guide</Text>
+                    </View>
+                    <View style={styles.riskList}>
+                        {RISK_LEVELS.map((item, index) => (
+                            <View key={index} style={styles.riskRow}>
+                                <View style={styles.riskRangeContainer}>
+                                    <View style={[styles.riskDot, { backgroundColor: item.color }]} />
+                                    <Text style={styles.riskRange}>{item.range}</Text>
+                                </View>
+                                <Text style={[styles.riskLevel, { color: item.color }]}>{item.level}</Text>
+                            </View>
+                        ))}
                     </View>
                 </View>
-            )}
 
-            {/* Safe Time Display */}
-            <View style={styles.infoCard}>
-                <Text style={styles.infoText}>
-                    Your safe sun exposure time: <Text style={styles.infoHighlight}>{safeMinutes} minutes</Text>
-                </Text>
-            </View>
-
-            {/* FEATURE 2: RISK LEVEL LEGEND */}
-            <View style={styles.riskLegendCard}>
-                <View style={{ marginBottom: SPACING.md }}>
-                    <Text style={[styles.riskLegendTitle, { marginBottom: 0 }]}>Risk Level Guide</Text>
+                {/* NO SENSOR DISCLAIMER */}
+                <View style={styles.disclaimerContainer}>
+                    <Text style={styles.disclaimerText}>
+                        ⚠️ No Sensor Detected. All values are estimates based on location and time.
+                        Suntime does not use direct body sensors.
+                    </Text>
                 </View>
-                <View style={styles.riskList}>
-                    {RISK_LEVELS.map((item, index) => (
-                        <View key={index} style={styles.riskRow}>
-                            <View style={styles.riskRangeContainer}>
-                                <View style={[styles.riskDot, { backgroundColor: item.color }]} />
-                                <Text style={styles.riskRange}>{item.range}</Text>
-                            </View>
-                            <Text style={[styles.riskLevel, { color: item.color }]}>{item.level}</Text>
-                        </View>
-                    ))}
-                </View>
-            </View>
+            </ScrollView>
 
-            {/* NO SENSOR DISCLAIMER */}
-            <View style={styles.disclaimerContainer}>
-                <Text style={styles.disclaimerText}>
-                    ⚠️ No Sensor Detected. All values are estimates based on location and time.
-                    Suntime does not use direct body sensors.
-                </Text>
-            </View>
-        </ScrollView>
+            {/* Session Complete Overlay */}
+            <SessionCompleteOverlay
+                visible={isSessionComplete}
+                duration={safeMinutes}
+                onStartNew={handleStartNewSession}
+                onDismiss={handleDismissOverlay}
+            />
 
-            {/* Session Complete Overlay */ }
-    <SessionCompleteOverlay
-        visible={isSessionComplete}
-        duration={safeMinutes}
-        onStartNew={handleStartNewSession}
-        onDismiss={handleDismissOverlay}
-    />
-
-    {/* Whats New Modal */ }
-    <WhatsNewModal
-        visible={showWhatsNew}
-        onClose={() => setShowWhatsNew(false)}
-    />
+            {/* Whats New Modal */}
+            <WhatsNewModal
+                visible={showWhatsNew}
+                onClose={() => setShowWhatsNew(false)}
+            />
         </SafeAreaView >
     );
 }
@@ -985,7 +981,7 @@ const getStyles = (colors) => StyleSheet.create({
     },
     controlsContainer: {
         width: '100%',
-        paddingHorizontal: SPACING.lg,
+        marginTop: SPACING.md,
     },
     activeControls: {
         flexDirection: 'row',

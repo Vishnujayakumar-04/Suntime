@@ -60,6 +60,12 @@
           }
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "5811c752-2c9b-4594-973d-81424ee503f8"
+      }
+    },
+    "owner": "hackathon03"
   }
 }

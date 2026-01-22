@@ -25,7 +25,7 @@ export const uploadProfileImage = async (uid, uri) => {
         // 2. Create a reference
         // Path: profile_images/{uid}.jpg
         // Using a fixed name overwrites previous image, which saves space
-        const filename = `profile_images/${uid}.jpg`;
+        const filename = `profilePictures/${uid}.jpg`;
         const storageRef = ref(storage, filename);
 
         // 3. Upload

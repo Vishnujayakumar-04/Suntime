@@ -500,30 +500,33 @@ export default function ProfileScreen({ navigation }) {
                                 </TouchableOpacity>
 
                                 {/* Manual Option */}
+                                {/* Manual Option */}
                                 <View style={[styles.uvOptionCard, styles.uvManualContainer]}>
-                                    <View style={styles.uvOptionRow}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.md }}>
                                         <View style={styles.uvOptionIcon}>
                                             <Edit3 size={24} color={colors.primary} />
                                         </View>
                                         <View style={styles.uvOptionText}>
-                                            <Text style={styles.uvOptionTitle}>Enter Manual UV</Text>
+                                            <Text style={styles.uvOptionTitle}>Manual Input</Text>
                                             <Text style={styles.uvOptionDesc}>Set a fixed UV value (0-15)</Text>
                                         </View>
                                     </View>
-                                    <View style={styles.uvInputRow}>
+
+                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                         <TextInput
-                                            style={styles.uvInput}
+                                            style={[styles.uvInput, { flex: 1, textAlign: 'center' }]}
                                             value={uvInputValue}
                                             onChangeText={setUVInputValue}
-                                            placeholder="e.g. 5"
+                                            placeholder="0"
                                             placeholderTextColor={colors.textSecondary}
                                             keyboardType="numeric"
                                             maxLength={4}
                                         />
+                                        <Text style={{ marginHorizontal: 12, color: colors.textSecondary, fontWeight: '600' }}>UV Index</Text>
                                         <StandardButton
                                             title="Set"
                                             onPress={handleSaveManualUV}
-                                            style={{ marginLeft: SPACING.sm, paddingHorizontal: SPACING.lg }}
+                                            style={{ minWidth: 80 }}
                                         />
                                     </View>
                                 </View>
@@ -534,6 +537,74 @@ export default function ProfileScreen({ navigation }) {
                                     variant="ghost"
                                     style={{ marginTop: SPACING.md }}
                                 />
+                            </View>
+                        </TouchableWithoutFeedback>
+                    </View>
+                </TouchableWithoutFeedback>
+            </Modal>
+
+            {/* Vitamin D Modal */}
+            <Modal visible={isVitDModalVisible} transparent animationType="fade">
+                <TouchableWithoutFeedback onPress={() => setIsVitDModalVisible(false)}>
+                    <View style={styles.modalOverlay}>
+                        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                            <View style={styles.modalContent}>
+                                <Text style={styles.modalTitle}>Vitamin D Level</Text>
+                                <Text style={[styles.modalSubtitle, { marginBottom: SPACING.lg }]}>
+                                    Enter your latest blood test result (ng/mL)
+                                </Text>
+
+                                <View style={styles.uvOptionCard}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                        <View style={styles.uvOptionIcon}>
+                                            <Activity size={24} color={colors.primary} />
+                                        </View>
+                                        <TextInput
+                                            style={[styles.uvInput, { flex: 1, textAlign: 'left', paddingLeft: 16 }]}
+                                            value={vitDInputValue}
+                                            onChangeText={setVitDInputValue}
+                                            placeholder="e.g. 30"
+                                            placeholderTextColor={colors.textSecondary}
+                                            keyboardType="numeric"
+                                            maxLength={5}
+                                        />
+                                        <Text style={{ marginLeft: 12, color: colors.textSecondary, fontWeight: '600' }}>ng/mL</Text>
+                                    </View>
+                                </View>
+
+                                {/* Badge Preview */}
+                                {vitDInputValue ? (
+                                    <View style={{ alignItems: 'center', marginBottom: SPACING.lg }}>
+                                        <View style={{
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
+                                            backgroundColor: (getVitDStatus(vitDInputValue)?.color || colors.text) + '20',
+                                            paddingHorizontal: 16,
+                                            paddingVertical: 8,
+                                            borderRadius: 20
+                                        }}>
+                                            <Info size={16} color={getVitDStatus(vitDInputValue)?.color} style={{ marginRight: 8 }} />
+                                            <Text style={{ color: getVitDStatus(vitDInputValue)?.color, fontWeight: 'bold' }}>
+                                                {getVitDStatus(vitDInputValue)?.label}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                ) : null}
+
+                                <View style={styles.modalButtons}>
+                                    <StandardButton
+                                        title="Cancel"
+                                        onPress={() => setIsVitDModalVisible(false)}
+                                        variant="ghost"
+                                        style={{ flex: 1 }}
+                                    />
+                                    <View style={{ width: 10 }} />
+                                    <StandardButton
+                                        title="Save"
+                                        onPress={handleSaveVitaminD}
+                                        style={{ flex: 1 }}
+                                    />
+                                </View>
                             </View>
                         </TouchableWithoutFeedback>
                     </View>
