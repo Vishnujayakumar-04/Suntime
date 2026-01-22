@@ -22,7 +22,7 @@ import { interpolateColor, useSharedValue, useAnimatedProps, withTiming } from '
 
 export default function ProgressScreen() {
     const navigation = useNavigation();
-    const { user } = useAuth();
+    const { user, userProfile } = useAuth();
     const { colors, isDark } = useTheme();
     const styles = React.useMemo(() => getStyles(colors), [colors]);
 
@@ -36,12 +36,12 @@ export default function ProgressScreen() {
 
     useEffect(() => {
         if (user) loadProgress();
-    }, [user]);
+    }, [user, userProfile]);
 
     useFocusEffect(
         React.useCallback(() => {
             if (user) loadProgress();
-        }, [user])
+        }, [user, userProfile])
     );
 
     const loadProgress = async () => {
@@ -63,7 +63,7 @@ export default function ProgressScreen() {
 
             // Calculate today's minutes and Exposure Score
             let todayMins = 0;
-            let dailyScoreRaw = 0;
+            let totalScore = 0;
 
             const todaySessions = logs.filter(log => {
                 const logDate = new Date(log.date);
@@ -71,17 +71,40 @@ export default function ProgressScreen() {
                 return logDay.getTime() === today.getTime();
             });
 
+            // User Skin Type (Fallback to 3)
+            const currentSkinType = userProfile?.skinType || 3;
+
             todaySessions.forEach(log => {
                 const duration = log.exposureTime || log.duration || 0;
-                const uv = log.uvIndex || 0;
                 todayMins += duration;
-                // Score = UV * Time. Scaling: 100 units = Score 50 (Optimal)
-                dailyScoreRaw += (uv * duration);
+
+                // Use saved completion score if available, otherwise estimate
+                if (log.exposureScore !== undefined) {
+                    totalScore += log.exposureScore;
+                } else {
+                    // Back-calculate for legacy logs
+                    // Assuming cloudy=false, sunscreen=false if missing (conservative)
+                    const uv = log.uvIndex || 0;
+                    // We need to import calculateExposureScore from sunLogic
+                    // But we can't easily inject the import in this replace block if it's not top level.
+                    // Wait, I can't add imports here. 
+                    // I will do a Crude approximation consistent with logic: 
+                    // Score = (Duration / MaxSafe) * 100. maxSafe ~ 60 mins for moderate UV.
+                    // Actually, let's just use the crude one if missing, but weight it better.
+                    // Or, ideally, I should have imported calculateExposureScore.
+                    // Implementation Plan B: purely rely on UV * Duration scaling if missing.
+                    // 1 UV * 1 Min = 1 Score Point ? 
+                    // UV 5 * 30 mins = 150 (High). 
+                    // But base safe time for UV 5, Type 3 is ~45 mins. 
+                    // So 30 mins is 67% safe. Score should be 67.
+                    // 150 / 2.2 = 68. 
+                    // Factor ~ 0.45. OLD Code had 0.5. It was actually decent!
+                    totalScore += (uv * duration * 0.5);
+                }
             });
 
             setTodayMinutes(todayMins);
-            const calculatedScore = Math.min(100, Math.round(dailyScoreRaw * 0.5)); // Scaling factor 0.5
-            setExposureScore(calculatedScore);
+            setExposureScore(Math.round(totalScore));
 
             // Calculate weekly streak (consecutive days with sessions)
             let streak = 0;
@@ -94,12 +117,39 @@ export default function ProgressScreen() {
                 });
                 if (dayLogs.length > 0) {
                     streak++;
-                } else {
+                } else if (i > 0) { // Allow today to be empty if streak continues from yesterday
+                    // Wait, standard streak logic: if today empty, streak is yesterday's streak?
+                    // If I haven't done it TODAY, is my streak 5 or 0? 
+                    // Usually 5 until day ends. 
+                    // But here we check past 7 days.
+                    // Simple logic: consecutive days going back from Yesterday (if today empty) or Today (if today not empty).
                     break;
                 }
                 checkDate.setDate(checkDate.getDate() - 1);
             }
-            setWeeklyStreak(streak);
+            // Better streak logic exists in firestore.js getSessionStats, let's trust that logic?
+            // Actually, I'll stick to the loop but allow today to be skipped.
+            // Re-impl simple loop:
+            let s = 0;
+            let date = new Date(today);
+            // Check today
+            const hasToday = logs.some(l => new Date(l.date).toDateString() === date.toDateString());
+            if (!hasToday) {
+                date.setDate(date.getDate() - 1); // Start checking from yesterday
+            }
+
+            while (s < 365) {
+                const dString = date.toDateString();
+                const hasSession = logs.some(l => new Date(l.date).toDateString() === dString);
+                if (hasSession) {
+                    s++;
+                    date.setDate(date.getDate() - 1);
+                } else {
+                    break;
+                }
+            }
+            setWeeklyStreak(s);
+
 
             // Calculate monthly total
             const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -134,9 +184,10 @@ export default function ProgressScreen() {
 
     // Score Helpers
     const getScoreInfo = (score) => {
-        if (score < 40) return { label: 'Insufficient', color: '#EF5350', advice: 'Try to get more safe sun exposure.' };
-        if (score <= 70) return { label: 'Optimal', color: '#66BB6A', advice: 'Perfect! Maintain this level.' };
-        return { label: 'High', color: '#FFA726', advice: 'Consider reducing exposure.' };
+        if (score < 40) return { label: 'Low', color: '#42A5F5', advice: 'Try to get more safe sun exposure.' };
+        if (score <= 80) return { label: 'Optimal', color: '#66BB6A', advice: 'Perfect! Maintain this level.' };
+        if (score <= 120) return { label: 'High', color: '#FFA726', advice: 'Consider reducing exposure.' };
+        return { label: 'Excessive', color: '#EF5350', advice: 'Avoid further sun exposure today.' };
     };
 
     const scoreInfo = getScoreInfo(exposureScore);

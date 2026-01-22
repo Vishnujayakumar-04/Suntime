@@ -297,12 +297,7 @@ const getStyles = (colors, isDark) => StyleSheet.create({
         fontWeight: '600',
         color: colors.text,
     },
-    acceptanceText: {
-        ...TYPOGRAPHY.body,
-        flex: 1,
-        fontWeight: '600',
-        color: colors.text,
-    },
+
     backButton: {
         position: 'absolute',
         top: SPACING.lg,
