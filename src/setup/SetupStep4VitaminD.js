@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { COLORS, SPACING, TYPOGRAPHY, BORDER_RADIUS, SHADOWS, moderateScale, GLASS } from '../constants/theme';
-import { Activity, Camera, FileText, Info, AlertTriangle, CheckCircle } from 'lucide-react-native';
+import { Activity, Camera, FileText, Info, AlertTriangle, CheckCircle, ArrowLeft } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import StandardButton from '../components/common/StandardButton';
@@ -81,6 +81,14 @@ export default function SetupStep4VitaminD({ navigation }) {
 
     return (
         <SafeAreaView style={styles.container}>
+            {/* Back Button Header */}
+            <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}
+            >
+                <ArrowLeft size={24} color={colors.text} />
+            </TouchableOpacity>
+
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={{ flex: 1 }}
@@ -279,5 +287,12 @@ const getStyles = (colors, isDark) => StyleSheet.create({
     dummyText: {
         ...TYPOGRAPHY.caption,
         color: colors.textSecondary,
-    }
+    },
+    backButton: {
+        position: 'absolute',
+        top: SPACING.lg,
+        left: SPACING.lg,
+        zIndex: 10,
+        padding: SPACING.sm,
+    },
 });

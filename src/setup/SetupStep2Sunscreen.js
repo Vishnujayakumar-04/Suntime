@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
 import { COLORS, SPACING, TYPOGRAPHY, BORDER_RADIUS, SHADOWS, moderateScale, GLASS } from '../constants/theme';
-import { Shield, Check, Sun } from 'lucide-react-native';
+import { Shield, Check, Sun, ArrowLeft } from 'lucide-react-native';
 import { saveDefaultPreferences } from '../utils/storage';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
@@ -55,6 +55,14 @@ export default function SetupStep2Sunscreen({ navigation }) {
 
     return (
         <SafeAreaView style={styles.container}>
+            {/* Back Button Header */}
+            <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}
+            >
+                <ArrowLeft size={24} color={colors.text} />
+            </TouchableOpacity>
+
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
@@ -62,9 +70,9 @@ export default function SetupStep2Sunscreen({ navigation }) {
                 {/* Progress Indicator */}
                 <View style={styles.progressContainer}>
                     <View style={styles.progressBar}>
-                        <View style={[styles.progressFill, { width: '50%' }]} />
+                        <View style={[styles.progressFill, { width: '40%' }]} />
                     </View>
-                    <Text style={styles.progressText}>Step 2 of 4</Text>
+                    <Text style={styles.progressText}>Step 2 of 5</Text>
                 </View>
 
                 {/* Header */}
@@ -270,5 +278,12 @@ const getStyles = (colors, isDark) => StyleSheet.create({
         ...TYPOGRAPHY.subheading,
         color: colors.white,
         fontWeight: '600',
+    },
+    backButton: {
+        position: 'absolute',
+        top: SPACING.lg,
+        left: SPACING.lg,
+        zIndex: 10,
+        padding: SPACING.sm,
     },
 });

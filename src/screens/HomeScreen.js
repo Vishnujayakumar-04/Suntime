@@ -741,8 +741,6 @@ export default function HomeScreen({ navigation }) {
                         </View>
                     )}
                 </View>
-            </Animated.View>
-
             {/* Environment Toggles */}
             <View style={styles.togglesContainer}>
                 <TouchableOpacity

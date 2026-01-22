@@ -38,6 +38,7 @@ import {
     limit,
     serverTimestamp
 } from 'firebase/firestore';
+import { db } from '../config/firebase';
 import { calculateSafeTime, getUVCategory, calculateExposureScore } from '../utils/sunLogic';
 
 // Collection names

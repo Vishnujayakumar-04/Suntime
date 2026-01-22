@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { COLORS, SPACING, TYPOGRAPHY, BORDER_RADIUS, SHADOWS, moderateScale, GLASS } from '../constants/theme';
-import { AlertTriangle, Info, ShieldAlert, Heart, Activity } from 'lucide-react-native';
+import { AlertTriangle, Info, ShieldAlert, Heart, Activity, ArrowLeft } from 'lucide-react-native';
 import { completeSetup, saveDisclaimerAcceptance } from '../utils/storage';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
@@ -85,6 +85,14 @@ export default function SetupStep5Disclaimer({ navigation }) {
 
     return (
         <SafeAreaView style={styles.container}>
+            {/* Back Button Header */}
+            <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}
+            >
+                <ArrowLeft size={24} color={colors.text} />
+            </TouchableOpacity>
+
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
@@ -294,5 +302,12 @@ const getStyles = (colors, isDark) => StyleSheet.create({
         flex: 1,
         fontWeight: '600',
         color: colors.text,
+    },
+    backButton: {
+        position: 'absolute',
+        top: SPACING.lg,
+        left: SPACING.lg,
+        zIndex: 10,
+        padding: SPACING.sm,
     },
 });
