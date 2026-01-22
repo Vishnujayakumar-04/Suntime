@@ -16,7 +16,9 @@ import { SPACING, TYPOGRAPHY, BORDER_RADIUS, SHADOWS, moderateScale, GRADIENTS, 
 import { LinearGradient } from 'expo-linear-gradient';
 import { fetchSessions } from '../services/firestore';
 import { useAuth } from '../context/AuthContext';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, Sun, Cloud, Info, TrendingUp, Calendar, AlertTriangle, CheckCircle, Activity } from 'lucide-react-native';
+import Svg, { Circle, G } from 'react-native-svg';
+import { interpolateColor, useSharedValue, useAnimatedProps, withTiming } from 'react-native-reanimated';
 
 export default function ProgressScreen() {
     const navigation = useNavigation();
@@ -139,6 +141,18 @@ export default function ProgressScreen() {
 
     const scoreInfo = getScoreInfo(exposureScore);
 
+    const getRingColor = (score) => {
+        if (score < 40) return '#42A5F5'; // Blue
+        if (score <= 80) return '#66BB6A'; // Green
+        if (score <= 120) return '#FFA726'; // Orange
+        return '#EF5350'; // Red
+    };
+
+    const ringColor = getRingColor(exposureScore);
+    const radius = 60;
+    const circumference = 2 * Math.PI * radius;
+    const strokeDashoffset = circumference - ((Math.min(exposureScore, 100) / 100) * circumference);
+
     return (
         <SafeAreaView style={styles.container}>
             <LinearGradient
@@ -153,128 +167,174 @@ export default function ProgressScreen() {
                 showsVerticalScrollIndicator={false}
             >
                 {/* Header */}
-                <Animated.View
-                    entering={FadeInDown}
-                    style={styles.header}
-                >
-                    <View style={styles.headerTop}>
-                        <TouchableOpacity
-                            onPress={() => navigation.navigate('Home')}
-                            style={styles.backButton}
-                        >
-                            <ArrowLeft color={colors.text} size={24} />
-                        </TouchableOpacity>
-
-                    </View>
+                <Animated.View entering={FadeInDown} style={styles.header}>
                     <Text style={styles.title}>Your Progress</Text>
-                    <Text style={styles.subtitle}>
-                        Track your safe sun exposure journey
+                    <Text style={styles.subtitle}>Track your safe sun exposure journey</Text>
+                </Animated.View>
+
+                {/* EXPOSURE SCORE CARD (Main Feature) */}
+                <Animated.View entering={ZoomIn} style={styles.card}>
+                    <View style={styles.cardHeader}>
+                        <Text style={styles.cardTitle}>Today's Exposure Score</Text>
+                        <View style={[styles.badge, { backgroundColor: ringColor }]}>
+                            <Text style={styles.badgeText}>{scoreInfo.label}</Text>
+                        </View>
+                    </View>
+
+                    {/* Ring & Icon Row */}
+                    <View style={styles.ringContainer}>
+                        <View style={styles.ringWrapper}>
+                            {/* SVG Ring */}
+                            <Svg width="140" height="140" viewBox="0 0 140 140" style={{ transform: [{ rotate: '-90deg' }] }}>
+                                {/* Background Circle */}
+                                <Circle
+                                    cx="70"
+                                    cy="70"
+                                    r={radius}
+                                    stroke={isDark ? "#333" : "#E0E0E0"}
+                                    strokeWidth="10"
+                                    fill="transparent"
+                                />
+                                {/* Progress Circle */}
+                                <Circle
+                                    cx="70"
+                                    cy="70"
+                                    r={radius}
+                                    stroke={ringColor}
+                                    strokeWidth="10"
+                                    fill="transparent"
+                                    strokeDasharray={circumference}
+                                    strokeDashoffset={strokeDashoffset}
+                                    strokeLinecap="round"
+                                />
+                            </Svg>
+                            <View style={styles.ringInner}>
+                                <Text style={[styles.ringNumber, { color: ringColor }]}>{exposureScore}</Text>
+                                <Text style={styles.ringTotal}>/ 100</Text>
+                            </View>
+                        </View>
+
+                        {/* Decoration Icon */}
+                        <View style={styles.weatherIcon}>
+                            {/* Static visual matching screenshot style */}
+                            <Sun size={48} color="#FFB74D" style={{ position: 'absolute', top: -10, right: -10 }} />
+                            <Cloud size={32} color={isDark ? '#FFF' : '#CFD8DC'} style={{ position: 'absolute', bottom: 0, left: -5 }} />
+                        </View>
+                    </View>
+
+                    {/* Gradient Bar */}
+                    <View style={styles.barContainer}>
+                        <View style={styles.gradientBarWrapper}>
+                            <LinearGradient
+                                colors={['#42A5F5', '#66BB6A', '#FFA726', '#EF5350']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={styles.gradientBar}
+                            />
+                            {/* Thumb Indicator */}
+                            <Animated.View
+                                style={[
+                                    styles.thumb,
+                                    {
+                                        left: `${Math.min(Math.max((exposureScore / 120) * 100, 0), 100)}%`
+                                    }
+                                ]}
+                            />
+                        </View>
+                        <View style={styles.barLabels}>
+                            <Text style={styles.barLabelText}>Low</Text>
+                            <Text style={[styles.barLabelText, { textAlign: 'center' }]}>Optimal</Text>
+                            <Text style={[styles.barLabelText, { textAlign: 'right' }]}>High</Text>
+                        </View>
+                    </View>
+
+                    {/* Footer Info */}
+                    <View style={styles.exposureFooter}>
+                        <Sun size={16} color={colors.textSecondary} style={{ marginRight: 6 }} />
+                        <Text style={styles.footerText}>{todayMinutes} minutes of exposure today</Text>
+                    </View>
+                </Animated.View>
+
+                {/* RECOMMENDATION CARD */}
+                <Animated.View entering={FadeInDown.delay(100)} style={styles.recommendationCard}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                        <Info size={20} color="#FFA726" style={{ marginRight: 8 }} />
+                        <Text style={styles.recTitle}>Recommendation</Text>
+                    </View>
+                    <Text style={styles.recText}>
+                        {scoreInfo.advice || "Consider getting a bit more sun exposure for Vitamin D production."}
                     </Text>
                 </Animated.View>
 
-                {/* EXPOSURE SCORE CARD */}
-                <Animated.View entering={ZoomIn} style={styles.card}>
-                    <Text style={styles.cardTitle}>Daily Exposure Score</Text>
-                    <View style={{ alignItems: 'center', marginBottom: SPACING.md }}>
-                        <Text style={[styles.largeNumber, { color: scoreInfo.color }]}>
-                            {exposureScore}
-                        </Text>
-                        <Text style={[styles.scoreLabel, { color: scoreInfo.color }]}>
-                            {scoreInfo.label}
-                        </Text>
-                    </View>
-                    {/* Score Bar */}
-                    <View style={styles.scoreBarCtx}>
-                        <View style={[styles.scoreBarFill, { width: `${Math.min(exposureScore, 100)}%`, backgroundColor: scoreInfo.color }]} />
-                    </View>
-                    <Text style={styles.scoreAdvice}>{scoreInfo.advice}</Text>
-                </Animated.View>
-
-                {/* Today's Minutes */}
-                <Animated.View
-                    entering={ZoomIn.delay(100)}
-                    style={styles.card}
-                >
-                    <Text style={styles.cardTitle}>Today's Duration</Text>
-                    <View style={styles.progressContainer}>
-                        <Text style={styles.largeNumber}>{todayMinutes}</Text>
-                        <Text style={styles.largeUnit}>minutes</Text>
-                    </View>
-
-                    {/* Progress Bar */}
-                    <View style={styles.progressBarContainer}>
-                        <View style={styles.progressBarBackground}>
-                            <LinearGradient
-                                colors={GRADIENTS.primary}
-                                style={[
-                                    styles.progressBarFill,
-                                    { width: `${Math.min((todayMinutes / recommendedDaily) * 100, 100)}%` }
-                                ]}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                            />
-                        </View>
-                        <Text style={styles.progressText}>
-                            {Math.round((todayMinutes / recommendedDaily) * 100)}% of daily goal
-                        </Text>
-                    </View>
-                </Animated.View>
-
-                {/* Stats Grid */}
+                {/* Stats Grid - Streak & Monthly */}
                 <View style={styles.statsGrid}>
-                    {/* Weekly Streak */}
-                    <Animated.View
-                        entering={FadeInRight}
-                        style={styles.statCard}
-                    >
-                        <Text style={styles.statNumber}>{weeklyStreak}</Text>
-                        <Text style={styles.statLabel}>Day Streak</Text>
+                    <Animated.View entering={FadeInRight} style={styles.miniStatCard}>
+                        <Text style={styles.miniStatNumber}>{weeklyStreak}</Text>
+                        <Text style={styles.miniStatLabel}>Day Streak</Text>
                     </Animated.View>
 
-                    {/* Monthly Total */}
-                    <Animated.View
-                        entering={FadeInRight}
-                        style={styles.statCard}
-                    >
-                        <Text style={styles.statNumber}>{monthlyTotal}</Text>
-                        <Text style={styles.statLabel}>Monthly Minutes</Text>
+                    <Animated.View entering={FadeInRight.delay(50)} style={styles.miniStatCard}>
+                        <Text style={styles.miniStatNumber}>{monthlyTotal}</Text>
+                        <Text style={styles.miniStatLabel}>Monthly Minutes</Text>
                     </Animated.View>
                 </View>
 
                 {/* All-Time Stats */}
                 <View style={styles.card}>
                     <Text style={styles.cardTitle}>All-Time Statistics</Text>
-
                     <View style={styles.statRow}>
                         <Text style={styles.statRowLabel}>Total Sessions</Text>
                         <Text style={styles.statRowValue}>{totalSessions}</Text>
                     </View>
-
+                    <View style={styles.statLine} />
                     <View style={styles.statRow}>
                         <Text style={styles.statRowLabel}>Average per Day</Text>
-                        <Text style={styles.statRowValue}>
-                            {averagePerDay} min
+                        <Text style={styles.statRowValue}>{averagePerDay} min</Text>
+                    </View>
+                </View>
+
+                {/* Legend Card */}
+                <View style={styles.card}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.md }}>
+                        <TrendingUp size={20} color={colors.primary} style={{ marginRight: 8 }} />
+                        <Text style={styles.cardTitle}>Understanding Your Score</Text>
+                    </View>
+
+                    <View style={styles.legendItem}>
+                        <Text style={styles.legendText}>
+                            <Text style={{ color: '#42A5F5', fontWeight: 'bold' }}>• 0-40: </Text>
+                            Low exposure - consider more outdoor time
+                        </Text>
+                    </View>
+                    <View style={styles.legendItem}>
+                        <Text style={styles.legendText}>
+                            <Text style={{ color: '#66BB6A', fontWeight: 'bold' }}>• 40-80: </Text>
+                            Optimal - great for Vitamin D
+                        </Text>
+                    </View>
+                    <View style={styles.legendItem}>
+                        <Text style={styles.legendText}>
+                            <Text style={{ color: '#FFA726', fontWeight: 'bold' }}>• 80-120: </Text>
+                            High - use protection
+                        </Text>
+                    </View>
+                    <View style={styles.legendItem}>
+                        <Text style={styles.legendText}>
+                            <Text style={{ color: '#EF5350', fontWeight: 'bold' }}>• 120+: </Text>
+                            Excessive - avoid
                         </Text>
                     </View>
                 </View>
 
-                {/* Tips Card */}
-                <View style={styles.tipsCard}>
-                    <Text style={styles.tipsTitle}>Did you know?</Text>
-                    <Text style={styles.tipsText}>
-                        Getting 10-30 minutes of midday sun several times per week helps your body produce Vitamin D naturally. Remember to never burn!
-                    </Text>
-                </View>
-
                 {/* Disclaimer */}
                 <View style={styles.disclaimer}>
+                    <Info size={16} color={colors.textSecondary} style={{ marginRight: 8, marginTop: 2 }} />
                     <Text style={styles.disclaimerText}>
-                        Progress tracking is for awareness only. Always listen to your body and consult healthcare professionals for medical advice.
+                        This is an estimation for awareness only, not medical advice. Always consult healthcare professionals.
                     </Text>
                 </View>
+
             </ScrollView>
-
-
         </SafeAreaView>
     );
 }
@@ -286,185 +346,221 @@ const getStyles = (colors) => StyleSheet.create({
     },
     scrollContent: {
         padding: SPACING.lg,
-        paddingBottom: moderateScale(100),
+        paddingBottom: 100,
     },
     header: {
         marginBottom: SPACING.lg,
-        paddingTop: SPACING.xs,
-    },
-    headerTop: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between', // Changed to space-between for menu
-        marginBottom: SPACING.xs,
-    },
-    backButton: {
-        marginRight: SPACING.sm,
-        padding: SPACING.xs,
     },
     title: {
         ...TYPOGRAPHY.title,
-        fontSize: moderateScale(32),
+        fontSize: moderateScale(28),
         color: colors.text,
+        marginBottom: 4,
     },
     subtitle: {
         ...TYPOGRAPHY.body,
         color: colors.textSecondary,
-        lineHeight: 24,
-        marginTop: SPACING.xs,
+        fontSize: moderateScale(14),
     },
+    // Cards
     card: {
         backgroundColor: colors.cardBackground,
         borderRadius: BORDER_RADIUS.xl,
-        padding: SPACING.xl,
+        padding: SPACING.lg,
         marginBottom: SPACING.lg,
-        ...SHADOWS.medium,
-        ...(colors.background === '#121212' ? GLASS.dark : GLASS.default),
-        borderWidth: 0,
+        ...SHADOWS.small,
+    },
+    cardHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: SPACING.lg,
     },
     cardTitle: {
-        ...TYPOGRAPHY.heading,
-        marginBottom: SPACING.lg,
+        fontSize: moderateScale(16),
+        fontWeight: 'bold',
         color: colors.text,
     },
-    progressContainer: {
+    badge: {
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        borderRadius: 12,
+    },
+    badgeText: {
+        color: '#FFF',
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
+    // Ring
+    ringContainer: {
         flexDirection: 'row',
-        alignItems: 'baseline',
         justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: SPACING.xl,
+        paddingHorizontal: SPACING.lg,
+    },
+    ringWrapper: {
+        width: 140,
+        height: 140,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: SPACING.xl, // Space between ring and sun icon
+    },
+    ringInner: {
+        position: 'absolute',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    ringNumber: {
+        fontSize: 40,
+        fontWeight: 'bold',
+        color: colors.text,
+    },
+    ringTotal: {
+        fontSize: 14,
+        color: colors.textSecondary,
+        marginTop: -4,
+    },
+    weatherIcon: {
+        width: 60,
+        height: 60,
+        // This is a placeholder for the Sun+Cloud composition
+    },
+    // Gradient Bar
+    barContainer: {
         marginBottom: SPACING.lg,
     },
-    largeNumber: {
-        fontSize: moderateScale(64),
+    gradientBarWrapper: {
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: '#E0E0E0',
+        marginBottom: 8,
+        justifyContent: 'center',
+    },
+    gradientBar: {
+        flex: 1,
+        borderRadius: 4,
+    },
+    thumb: {
+        position: 'absolute',
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+        backgroundColor: '#FFF',
+        borderWidth: 2,
+        borderColor: '#333',
+        marginLeft: -7, // center thumb
+        ...SHADOWS.small
+    },
+    barLabels: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    barLabelText: {
+        fontSize: 10,
+        color: colors.textSecondary,
+        width: 50,
+    },
+    exposureFooter: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: colors.background, // Slight contrast
+        padding: SPACING.sm,
+        borderRadius: BORDER_RADIUS.md,
+    },
+    footerText: {
+        color: colors.textSecondary,
+        fontSize: 13,
+    },
+    // Rec Card
+    recommendationCard: {
+        backgroundColor: '#EFEBE9', // Beige/Light Grey
+        borderRadius: BORDER_RADIUS.lg,
+        padding: SPACING.lg,
+        marginBottom: SPACING.lg,
+        borderLeftWidth: 4,
+        borderLeftColor: '#8D6E63', // Brownish
+    },
+    recTitle: {
+        fontSize: 16,
         fontWeight: 'bold',
-        color: colors.primary,
-        marginRight: SPACING.sm,
+        color: '#3E2723',
     },
-    largeUnit: {
-        ...TYPOGRAPHY.subheading,
-        color: colors.textSecondary,
+    recText: {
+        fontSize: 14,
+        color: '#5D4037',
+        lineHeight: 20,
     },
-    progressBarContainer: {
-        marginTop: SPACING.md,
-    },
-    progressBarBackground: {
-        height: moderateScale(12),
-        backgroundColor: colors.backgroundLight,
-        borderRadius: BORDER_RADIUS.full,
-        overflow: 'hidden',
-    },
-    progressBarFill: {
-        height: '100%',
-        backgroundColor: colors.primary,
-        borderRadius: BORDER_RADIUS.full,
-    },
-    progressText: {
-        ...TYPOGRAPHY.caption,
-        color: colors.textSecondary,
-        textAlign: 'center',
-        marginTop: SPACING.sm,
-    },
+    // Stats Grid
     statsGrid: {
         flexDirection: 'row',
         gap: SPACING.md,
         marginBottom: SPACING.lg,
     },
-    statCard: {
+    miniStatCard: {
         flex: 1,
-        backgroundColor: colors.cardBackground,
+        backgroundColor: '#FFF', // White
         borderRadius: BORDER_RADIUS.lg,
-        padding: SPACING.lg,
+        padding: SPACING.xl,
         alignItems: 'center',
+        justifyContent: 'center',
         ...SHADOWS.small,
-        ...(colors.background === '#121212' ? GLASS.dark : GLASS.default),
-        borderWidth: 0,
+        minHeight: 120,
     },
-    statEmoji: {
-        fontSize: moderateScale(40),
-        marginBottom: SPACING.sm,
-    },
-    statNumber: {
-        fontSize: moderateScale(32),
+    miniStatNumber: {
+        fontSize: 48,
         fontWeight: 'bold',
-        color: colors.primary,
-        marginBottom: SPACING.xs,
+        color: '#EF6C00', // Orange
+        marginBottom: 4,
     },
-    statLabel: {
-        ...TYPOGRAPHY.caption,
-        color: colors.textSecondary,
+    miniStatLabel: {
+        fontSize: 12,
+        color: '#757575',
         textAlign: 'center',
     },
+    // All time
     statRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: SPACING.md,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.border,
+        paddingVertical: SPACING.sm,
+    },
+    statLine: {
+        height: 1,
+        backgroundColor: '#EEE',
+        marginVertical: SPACING.xs,
     },
     statRowLabel: {
-        ...TYPOGRAPHY.body,
-        color: colors.text,
+        fontSize: 14,
+        color: '#616161',
     },
     statRowValue: {
-        ...TYPOGRAPHY.subheading,
-        fontWeight: '600',
-        color: colors.primary,
-    },
-    tipsCard: {
-        backgroundColor: colors.backgroundLight,
-        borderRadius: BORDER_RADIUS.lg,
-        padding: SPACING.lg,
-        marginBottom: SPACING.lg,
-        borderLeftWidth: 5,
-        borderLeftColor: colors.primary,
-        ...SHADOWS.small,
-    },
-    tipsTitle: {
-        ...TYPOGRAPHY.subheading,
+        fontSize: 14,
         fontWeight: 'bold',
-        marginBottom: SPACING.sm,
-        color: colors.text,
+        color: '#212121',
     },
-    tipsText: {
-        ...TYPOGRAPHY.body,
-        lineHeight: 24,
-        color: colors.text,
+    // Legend
+    legendItem: {
+        marginBottom: 8,
     },
+    legendText: {
+        fontSize: 13,
+        color: '#424242',
+        lineHeight: 18,
+    },
+    // Disclaimer
     disclaimer: {
-        backgroundColor: colors.backgroundLight,
-        borderRadius: BORDER_RADIUS.md,
+        backgroundColor: '#F5F5F5',
         padding: SPACING.md,
-        marginTop: SPACING.md,
+        borderRadius: BORDER_RADIUS.lg,
+        flexDirection: 'row',
+        alignItems: 'flex-start',
     },
     disclaimerText: {
-        ...TYPOGRAPHY.caption,
-        fontStyle: 'italic',
-        color: colors.textSecondary,
-        textAlign: 'center',
-        lineHeight: 20,
-    },
-    // Score Styles
-    scoreLabel: {
-        ...TYPOGRAPHY.subheading,
-        fontWeight: 'bold',
-        textTransform: 'uppercase',
-        letterSpacing: 1,
-    },
-    scoreBarCtx: {
-        height: 8,
-        backgroundColor: colors.backgroundLight,
-        borderRadius: 4,
-        width: '100%',
-        marginBottom: SPACING.md,
-        overflow: 'hidden'
-    },
-    scoreBarFill: {
-        height: '100%',
-        borderRadius: 4,
-    },
-    scoreAdvice: {
-        ...TYPOGRAPHY.caption,
-        color: colors.textSecondary,
-        textAlign: 'center',
+        flex: 1,
+        fontSize: 12,
+        color: '#757575',
+        lineHeight: 16,
     }
 });
