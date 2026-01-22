@@ -1,0 +1,23 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // User Profiles
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Sessions (Root Collection)
+    match /sessions/{sessionId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+    
+    // Sessions (Subcollection - if used by legacy code, but we migrated to root)
+    // Keeping it just in case of mixed usage or future change
+    match /sessions/{userId}/logs/{logId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
