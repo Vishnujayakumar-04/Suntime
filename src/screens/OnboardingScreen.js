@@ -154,7 +154,7 @@ export default function OnboardingScreen({ navigation, route }) {
                         {loading ? 'Saving...' : 'Continue'}
                     </Text>
                 </TouchableOpacity>
-                <View style={{ height: 40 }} />
+                <View style={{ height: 20 }} />
             </ScrollView>
         </SafeAreaView>
     );
@@ -172,8 +172,8 @@ const getStyles = (colors) => StyleSheet.create({
     },
     header: {
         alignItems: 'center',
-        marginBottom: SPACING.xxl,
-        paddingTop: SPACING.lg,
+        marginBottom: SPACING.lg, // Reduced from xxl
+        paddingTop: SPACING.md,   // Reduced from lg
     },
     title: {
         ...TYPOGRAPHY.title,
@@ -204,8 +204,8 @@ const getStyles = (colors) => StyleSheet.create({
     skinTypeCard: {
         backgroundColor: colors.cardBackground, // Dynamic color
         borderRadius: BORDER_RADIUS.lg,
-        padding: SPACING.lg,
-        marginBottom: SPACING.md,
+        padding: SPACING.md, // Reduced from lg
+        marginBottom: 8,     // Reduced from md (which is ~16)
         borderWidth: 2,
         borderColor: colors.border, // Dynamic color
         ...SHADOWS.small,
@@ -250,8 +250,8 @@ const getStyles = (colors) => StyleSheet.create({
         borderRadius: BORDER_RADIUS.lg,
         padding: SPACING.md + 4, // Bigger touch area
         alignItems: 'center',
-        marginTop: SPACING.xl,
-        marginBottom: SPACING.xl,
+        marginTop: SPACING.md, // Reduced from xl
+        marginBottom: SPACING.md, // Reduced from xl
         ...SHADOWS.button,
     },
     continueButtonDisabled: {

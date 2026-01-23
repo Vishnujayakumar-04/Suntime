@@ -25,27 +25,35 @@ const FAQ_DATA = [
     }
 ];
 
-const FAQItem = ({ item, isOpen, onPress, colors }) => (
-    <TouchableOpacity
-        style={[styles.faqItem, { backgroundColor: colors.backgroundLight }]}
-        onPress={onPress}
-        activeOpacity={0.8}
-    >
-        <View style={styles.questionRow}>
-            <Text style={[styles.question, { color: colors.text }]}>{item.question}</Text>
-            {isOpen ? (
-                <ChevronUp size={20} color={colors.primary} />
-            ) : (
-                <ChevronDown size={20} color={colors.textSecondary} />
+const FAQItem = ({ item, isOpen, onPress, colors, styles = {} }) => {
+    // Safety check for styles
+    const containerStyle = styles.faqItem || {};
+    const questionRowStyle = styles.questionRow || {};
+    const answerStyle = styles.answer || {};
+    const questionStyle = styles.question || {};
+
+    return (
+        <TouchableOpacity
+            style={[containerStyle, { backgroundColor: colors.backgroundLight }]}
+            onPress={onPress}
+            activeOpacity={0.7}
+        >
+            <View style={questionRowStyle}>
+                <Text style={[questionStyle, { color: colors.text }]}>{item.question}</Text>
+                {isOpen ? (
+                    <ChevronUp size={20} color={colors.primary} />
+                ) : (
+                    <ChevronDown size={20} color={colors.textSecondary} />
+                )}
+            </View>
+            {isOpen && (
+                <Text style={[answerStyle, { color: colors.textSecondary }]}>
+                    {item.answer}
+                </Text>
             )}
-        </View>
-        {isOpen && (
-            <Text style={[styles.answer, { color: colors.textSecondary }]}>
-                {item.answer}
-            </Text>
-        )}
-    </TouchableOpacity>
-);
+        </TouchableOpacity>
+    );
+};
 
 export default function FAQModal({ visible, onClose }) {
     const { colors, isDark } = useTheme();
@@ -84,6 +92,7 @@ export default function FAQModal({ visible, onClose }) {
                                 isOpen={index === openIndex}
                                 onPress={() => setOpenIndex(index === openIndex ? null : index)}
                                 colors={colors}
+                                styles={dynamicStyles}
                             />
                         ))}
                     </ScrollView>

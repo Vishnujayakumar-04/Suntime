@@ -3,6 +3,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 /**
  * Upload profile image to Firebase Storage
+ * Uses XMLHttpRequest for robust Blob creation on React Native
  * 
  * @param {string} uid - User ID
  * @param {string} uri - Local file URI
@@ -18,14 +19,24 @@ export const uploadProfileImage = async (uid, uri) => {
 
         console.log(`[Storage] Starting upload for user: ${uid}`);
 
-        // 1. Fetch the image and convert to Blob
-        const response = await fetch(uri);
-        const blob = await response.blob();
+        // 1. Create Blob using XMLHttpRequest (Most reliable for RN)
+        const blob = await new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.onload = function () {
+                resolve(xhr.response);
+            };
+            xhr.onerror = function (e) {
+                console.log('[Storage] XHR Error:', e);
+                reject(new TypeError('Network request failed'));
+            };
+            xhr.responseType = 'blob';
+            xhr.open('GET', uri, true);
+            xhr.send(null);
+        });
 
         // 2. Create a reference
-        // Path: profile_images/{uid}.jpg
-        // Using a fixed name overwrites previous image, which saves space
-        const filename = `profilePictures/${uid}.jpg`;
+        // Path: profileImages/{uid}/profile.jpg (Requested format)
+        const filename = `profileImages/${uid}/profile.jpg`;
         const storageRef = ref(storage, filename);
 
         // 3. Upload
@@ -36,8 +47,12 @@ export const uploadProfileImage = async (uid, uri) => {
         const downloadURL = await getDownloadURL(storageRef);
         console.log('[Storage] Download URL:', downloadURL);
 
-        // Cleanup blob (helper function if needed, or JS GC handles it mostly)
-        // blob.close(); 
+        // Cleanup blob
+        try {
+            blob.close();
+        } catch (e) {
+            // Ignore clean up errors
+        }
 
         return downloadURL;
 

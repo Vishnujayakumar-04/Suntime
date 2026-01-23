@@ -48,14 +48,14 @@ export default function WeatherCard({ weatherData, loading }) {
                 </View>
 
                 {/* Humidity */}
-                <View style={[dynamicStyles.statItem, styles.borderLeft]}>
+                <View style={[dynamicStyles.statItem, dynamicStyles.borderLeft]}>
                     <Thermometer size={16} color={colors.textSecondary} style={{ marginRight: 6 }} />
                     <Text style={dynamicStyles.statText}>{humidity ? `${Math.round(humidity)}%` : '--'}</Text>
                     <Text style={dynamicStyles.statLabel}>Hum</Text>
                 </View>
 
                 {/* UV (Keep for completeness, though main UI has a big card) */}
-                <View style={[dynamicStyles.statItem, styles.borderLeft]}>
+                <View style={[dynamicStyles.statItem, dynamicStyles.borderLeft]}>
                     <Sun size={16} color={colors.primary} style={{ marginRight: 6 }} />
                     <Text style={dynamicStyles.statText}>{Math.round(uvIndex)}</Text>
                     <Text style={dynamicStyles.statLabel}>UV</Text>
@@ -65,14 +65,8 @@ export default function WeatherCard({ weatherData, loading }) {
     );
 }
 
-const styles = StyleSheet.create({
-    borderLeft: {
-        borderLeftWidth: 1,
-        borderLeftColor: 'rgba(0,0,0,0.05)',
-        paddingLeft: 12,
-        marginLeft: 12
-    }
-});
+// Static styles removed, moved to getStyles
+
 
 const getStyles = (colors, isDark) => StyleSheet.create({
     container: {
@@ -150,5 +144,11 @@ const getStyles = (colors, isDark) => StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+    },
+    borderLeft: {
+        borderLeftWidth: 1,
+        borderLeftColor: colors.border,
+        paddingLeft: 12,
+        marginLeft: 12
     }
 });

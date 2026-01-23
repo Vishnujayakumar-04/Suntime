@@ -15,6 +15,7 @@ import { useTheme } from '../context/ThemeContext';
 import { SPACING, TYPOGRAPHY, BORDER_RADIUS, SHADOWS, moderateScale, GRADIENTS, GLASS } from '../constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { fetchSessions } from '../services/firestore';
+import { calculateExposureScore } from '../utils/sunLogic';
 import { useAuth } from '../context/AuthContext';
 import { ArrowLeft, Sun, Cloud, Info, TrendingUp, Calendar, AlertTriangle, CheckCircle, Activity } from 'lucide-react-native';
 import Svg, { Circle, G } from 'react-native-svg';
@@ -82,24 +83,19 @@ export default function ProgressScreen() {
                 if (log.exposureScore !== undefined) {
                     totalScore += log.exposureScore;
                 } else {
-                    // Back-calculate for legacy logs
-                    // Assuming cloudy=false, sunscreen=false if missing (conservative)
+                    // Consistent calculation for legacy logs
+                    // Defaulting to conservative assumptions if data missing
                     const uv = log.uvIndex || 0;
-                    // We need to import calculateExposureScore from sunLogic
-                    // But we can't easily inject the import in this replace block if it's not top level.
-                    // Wait, I can't add imports here. 
-                    // I will do a Crude approximation consistent with logic: 
-                    // Score = (Duration / MaxSafe) * 100. maxSafe ~ 60 mins for moderate UV.
-                    // Actually, let's just use the crude one if missing, but weight it better.
-                    // Or, ideally, I should have imported calculateExposureScore.
-                    // Implementation Plan B: purely rely on UV * Duration scaling if missing.
-                    // 1 UV * 1 Min = 1 Score Point ? 
-                    // UV 5 * 30 mins = 150 (High). 
-                    // But base safe time for UV 5, Type 3 is ~45 mins. 
-                    // So 30 mins is 67% safe. Score should be 67.
-                    // 150 / 2.2 = 68. 
-                    // Factor ~ 0.45. OLD Code had 0.5. It was actually decent!
-                    totalScore += (uv * duration * 0.5);
+                    const durationMap = log.exposureTime || log.duration || 0;
+                    const skin = log.skinType || currentSkinType; // Use log's skin type or current user's
+                    const scoreData = calculateExposureScore(
+                        uv,
+                        durationMap,
+                        skin,
+                        false, // Assume no clouds if unknown
+                        false  // Assume no sunscreen if unknown
+                    );
+                    totalScore += scoreData.score;
                 }
             });
 
@@ -484,7 +480,7 @@ const getStyles = (colors) => StyleSheet.create({
     gradientBarWrapper: {
         height: 8,
         borderRadius: 4,
-        backgroundColor: '#E0E0E0',
+        backgroundColor: colors.border,
         marginBottom: 8,
         justifyContent: 'center',
     },
@@ -499,7 +495,7 @@ const getStyles = (colors) => StyleSheet.create({
         borderRadius: 7,
         backgroundColor: '#FFF',
         borderWidth: 2,
-        borderColor: '#333',
+        borderColor: colors.text,
         marginLeft: -7, // center thumb
         ...SHADOWS.small
     },
@@ -551,7 +547,7 @@ const getStyles = (colors) => StyleSheet.create({
     },
     miniStatCard: {
         flex: 1,
-        backgroundColor: '#FFF', // White
+        backgroundColor: colors.cardBackground, // USE THEME
         borderRadius: BORDER_RADIUS.lg,
         padding: SPACING.xl,
         alignItems: 'center',
@@ -562,12 +558,12 @@ const getStyles = (colors) => StyleSheet.create({
     miniStatNumber: {
         fontSize: 48,
         fontWeight: 'bold',
-        color: '#EF6C00', // Orange
+        color: '#EF6C00', // Orange remains good
         marginBottom: 4,
     },
     miniStatLabel: {
         fontSize: 12,
-        color: '#757575',
+        color: colors.textSecondary, // USE THEME
         textAlign: 'center',
     },
     // All time
@@ -579,17 +575,17 @@ const getStyles = (colors) => StyleSheet.create({
     },
     statLine: {
         height: 1,
-        backgroundColor: '#EEE',
+        backgroundColor: colors.border,
         marginVertical: SPACING.xs,
     },
     statRowLabel: {
         fontSize: 14,
-        color: '#616161',
+        color: colors.textSecondary,
     },
     statRowValue: {
         fontSize: 14,
         fontWeight: 'bold',
-        color: '#212121',
+        color: colors.text,
     },
     // Legend
     legendItem: {
@@ -597,12 +593,12 @@ const getStyles = (colors) => StyleSheet.create({
     },
     legendText: {
         fontSize: 13,
-        color: '#424242',
+        color: colors.text,
         lineHeight: 18,
     },
     // Disclaimer
     disclaimer: {
-        backgroundColor: '#F5F5F5',
+        backgroundColor: colors.backgroundLight,
         padding: SPACING.md,
         borderRadius: BORDER_RADIUS.lg,
         flexDirection: 'row',
@@ -611,7 +607,7 @@ const getStyles = (colors) => StyleSheet.create({
     disclaimerText: {
         flex: 1,
         fontSize: 12,
-        color: '#757575',
+        color: colors.textSecondary,
         lineHeight: 16,
     }
 });
